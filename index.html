@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#07090f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>PokéAI Analyzer</title>
+<link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;400;600;700;800;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#07090f;--surface:#0d1220;--surface2:#131929;--border:#1e2d4a;
+  --accent:#00d4ff;--accent2:#ff6b00;--accent3:#7c3aed;
+  --gold:#ffd700;--text:#e8f0ff;--muted:#6b7fa3;
+  --danger:#ff4757;--success:#00e676;
+}
+html,body{background:var(--bg);color:var(--text);font-family:'Exo 2',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,212,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,0.025) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+
+.app{position:relative;z-index:1;max-width:480px;margin:0 auto;padding:0 16px 32px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;padding:20px 0 16px;border-bottom:1px solid var(--border);margin-bottom:22px}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--accent),var(--accent3));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 0 20px rgba(0,212,255,0.3)}
+.logo-text{font-size:21px;font-weight:900;letter-spacing:-0.5px}
+.logo-text span{color:var(--accent)}
+.badge{background:linear-gradient(135deg,var(--accent3),var(--accent));font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:1px;text-transform:uppercase}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:12px;padding:4px;margin-bottom:22px;border:1px solid var(--border)}
+.tab{flex:1;padding:10px 4px;border:none;border-radius:8px;background:transparent;color:var(--muted);font-family:'Exo 2',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:all .2s;letter-spacing:.3px}
+.tab.active{background:linear-gradient(135deg,var(--accent3),#1d4ed8);color:#fff;box-shadow:0 2px 12px rgba(124,58,237,.45)}
+
+/* Panels */
+.panel{display:none}.panel.active{display:block}
+
+/* Upload zone */
+.upload-zone{border:2px dashed var(--border);border-radius:16px;padding:38px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:all .3s;margin-bottom:16px;position:relative}
+.upload-zone:active,.upload-zone.drag{border-color:var(--accent);background:rgba(0,212,255,0.04);box-shadow:0 0 28px rgba(0,212,255,.1)}
+.upload-icon{font-size:52px;margin-bottom:10px;display:block;animation:pulse 2.2s ease-in-out infinite}
+.upload-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.upload-sub{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:16px}
+.upload-btn-inner{display:inline-block;padding:11px 26px;background:linear-gradient(135deg,var(--accent3),#1d4ed8);border-radius:10px;font-size:13px;font-weight:700;color:#fff;box-shadow:0 4px 14px rgba(124,58,237,.5)}
+#fileInput{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0}
+
+/* Preview */
+.preview-wrap{display:none;border-radius:16px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px;position:relative}
+.preview-wrap.show{display:block}
+.preview-wrap img{width:100%;max-height:290px;object-fit:contain;display:block;background:var(--surface2)}
+.preview-badge{position:absolute;bottom:10px;left:12px;font-size:12px;font-weight:600;color:rgba(255,255,255,.85);background:rgba(0,0,0,.4);padding:3px 10px;border-radius:20px;backdrop-filter:blur(4px)}
+.btn-del{position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:8px;border:none;background:rgba(255,71,87,.85);color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center}
+
+/* Analysis type */
+.section-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.type-opt{padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;cursor:pointer;transition:all .2s}
+.type-opt.sel{border-color:var(--accent);background:rgba(0,212,255,.05);box-shadow:0 0 14px rgba(0,212,255,.1)}
+.type-opt .oi{font-size:22px;margin-bottom:3px}
+.type-opt .on{font-size:12px;font-weight:700}
+.type-opt .od{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* Buttons */
+.btn-primary{width:100%;padding:15px;border:none;border-radius:14px;color:#fff;font-family:'Exo 2',sans-serif;font-size:15px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;cursor:pointer;transition:all .3s;background:linear-gradient(135deg,var(--accent3),#1d4ed8);box-shadow:0 4px 18px rgba(124,58,237,.5)}
+.btn-primary:disabled{background:#151c2a;color:var(--muted);box-shadow:none;cursor:not-allowed}
+.btn-battle{background:linear-gradient(135deg,var(--accent2),#cc0000);box-shadow:0 4px 18px rgba(255,107,0,.45)}
+.btn-battle:disabled{background:#151c2a;box-shadow:none}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-label{font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;display:block}
+.form-input{width:100%;padding:12px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'Exo 2',sans-serif;font-size:14px;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,212,255,.12)}
+.form-input::placeholder{color:var(--muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+select.form-input{cursor:pointer}
+
+/* Battle VS */
+.battle-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:flex-end;margin-bottom:20px}
+.vs-ball{width:34px;height:34px;background:linear-gradient(135deg,var(--accent2),#c00);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;box-shadow:0 0 14px rgba(255,107,0,.5);margin-bottom:1px;flex-shrink:0}
+
+/* Loading */
+.loading{display:none;text-align:center;padding:38px 20px;margin-top:8px}
+.loading.show{display:block}
+.spinner{width:50px;height:50px;margin:0 auto 14px;border:3px solid var(--border);border-top-color:var(--accent);border-right-color:var(--accent3);border-radius:50%;animation:spin .9s linear infinite}
+.loading-text{font-size:14px;color:var(--accent);font-weight:600}
+.loading-sub{font-size:12px;color:var(--muted);margin-top:5px}
+
+/* Error */
+.error-msg{display:none;padding:12px 16px;background:rgba(255,71,87,.1);border:1px solid rgba(255,71,87,.3);border-radius:10px;font-size:13px;color:var(--danger);margin-top:12px}
+.error-msg.show{display:block}
+
+/* Result card */
+.result-card{display:none;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-top:16px;animation:slideUp .4s ease}
+.result-card.show{display:block}
+.result-header{padding:13px 16px;background:linear-gradient(135deg,rgba(0,212,255,.08),rgba(124,58,237,.08));border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.result-title{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent)}
+.result-sub{font-size:11px;color:var(--muted);font-weight:600}
+.result-body{padding:16px}
+
+/* IV bars */
+.iv-bars{margin-bottom:16px}
+.iv-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.iv-lbl{width:28px;font-family:'Share Tech Mono',monospace;font-size:12px;font-weight:700;text-transform:uppercase}
+.iv-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:hidden}
+.iv-fill{height:100%;border-radius:4px;transition:width 1.1s cubic-bezier(.34,1.56,.64,1)}
+.fill-atk{background:linear-gradient(90deg,#ef5350,#ff7043)}
+.fill-def{background:linear-gradient(90deg,#42a5f5,#29b6f6)}
+.fill-sta{background:linear-gradient(90deg,#66bb6a,#9ccc65)}
+.iv-val{font-family:'Share Tech Mono',monospace;font-size:13px;color:var(--text);width:32px;text-align:right}
+.iv-total{text-align:center;padding:14px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);margin-bottom:16px}
+.iv-pct{font-size:34px;font-weight:900;font-family:'Share Tech Mono',monospace;background:linear-gradient(135deg,var(--accent),var(--accent3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.iv-pct-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.info-cell{background:var(--surface2);border-radius:10px;padding:12px;border:1px solid var(--border)}
+.info-cell-lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.info-cell-val{font-size:15px;font-weight:800;color:var(--text)}
+.c-accent{color:var(--accent)}.c-gold{color:var(--gold)}.c-success{color:var(--success)}.c-danger{color:var(--danger)}
+
+/* Type badges */
+.type-badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin:2px}
+
+/* Rec items */
+.rec-item{display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border-left:3px solid var(--accent)}
+.rec-item.warn{border-left-color:var(--accent2)}
+.rec-icon{font-size:18px;flex-shrink:0;margin-top:1px}
+.rec-text{font-size:13px;line-height:1.5;color:var(--text)}
+.rec-text b{color:var(--accent)}
+
+/* AI summary */
+.ai-box{margin-top:14px;padding:14px;padding-top:18px;background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(0,212,255,.05));border-radius:10px;border:1px solid rgba(124,58,237,.25);font-size:13px;line-height:1.6;position:relative}
+.ai-label{position:absolute;top:-9px;left:12px;background:var(--surface);font-size:10px;font-weight:800;color:var(--accent3);padding:0 8px;letter-spacing:1px}
+
+/* Win bar */
+.win-bar-wrap{margin-bottom:16px}
+.win-bar-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.win-bar-track{flex:1;height:10px;background:var(--surface2);border-radius:5px;overflow:hidden}
+.win-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--success),var(--accent));transition:width 1s ease}
+.win-pct{font-size:26px;font-weight:900;font-family:'Share Tech Mono',monospace}
+
+/* Tags */
+.tag{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;letter-spacing:.5px}
+.tag-green{background:rgba(0,230,118,.12);color:var(--success);border:1px solid rgba(0,230,118,.3)}
+.tag-red{background:rgba(255,71,87,.12);color:var(--danger);border:1px solid rgba(255,71,87,.3)}
+.tag-blue{background:rgba(0,212,255,.12);color:var(--accent);border:1px solid rgba(0,212,255,.3)}
+
+/* Counter item */
+.counter-item{display:flex;align-items:flex-start;gap:10px;padding:10px;background:var(--surface2);border-radius:10px;margin-bottom:8px;border-left:3px solid var(--accent)}
+.counter-name{font-size:13px;font-weight:700;color:var(--accent)}
+.counter-moves{font-size:12px;color:var(--text);margin-top:1px}
+.counter-reason{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* History */
+.history-empty{text-align:center;padding:60px 20px;color:var(--muted)}
+.history-empty .ei{font-size:48px;margin-bottom:12px;opacity:.4}
+.history-item{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:8px}
+.history-thumb{width:46px;height:46px;border-radius:8px;object-fit:cover;flex-shrink:0;background:var(--surface2)}
+.history-icon{width:46px;height:46px;border-radius:8px;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.history-name{font-size:14px;font-weight:700}
+.history-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.history-iv{font-family:'Share Tech Mono',monospace;font-size:16px;font-weight:700;color:var(--accent)}
+
+/* Section title */
+.sec-title{font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+
+/* Animations */
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      <div class="logo-text">Poké<span>AI</span></div>
+    </div>
+    <div class="badge">IA Powered</div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('screenshot')">📸 Screenshot</button>
+    <button class="tab" onclick="switchTab('manual')">✏️ Manual</button>
+    <button class="tab" onclick="switchTab('battle')">⚔️ Batalha</button>
+    <button class="tab" onclick="switchTab('history')">📋 Histórico</button>
+  </div>
+
+  <!-- ══════════ SCREENSHOT ══════════ -->
+  <div id="panel-screenshot" class="panel active">
+
+    <!-- Upload zone -->
+    <div class="upload-zone" id="uploadZone">
+      <span class="upload-icon">📱</span>
+      <div class="upload-title">Carrega o teu Screenshot</div>
+      <div class="upload-sub">Clica aqui para escolher uma imagem<br>da tua galeria ou tirar foto</div>
+      <div class="upload-btn-inner">📂 Escolher Imagem / Câmara</div>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+
+    <!-- Preview -->
+    <div class="preview-wrap" id="previewWrap">
+      <img id="previewImg" src="" alt="Preview">
+      <div class="preview-badge">✅ Imagem carregada!</div>
+      <button class="btn-del" onclick="clearImage()">🗑️</button>
+    </div>
+
+    <!-- Analysis type -->
+    <div class="section-label">Tipo de Análise</div>
+    <div class="type-grid">
+      <div class="type-opt sel" onclick="selectType(this,'iv')">
+        <div class="oi">🧬</div><div class="on">IVs & Stats</div><div class="od">Ataque, Defesa, HP</div>
+      </div>
+      <div class="type-opt" onclick="selectType(this,'raid')">
+        <div class="oi">🐉</div><div class="on">Raid Boss</div><div class="od">Melhores counters</div>
+      </div>
+      <div class="type-opt" onclick="selectType(this,'pvp')">
+        <div class="oi">🏆</div><div class="on">PvP League</div><div class="od">GO Battle League</div>
+      </div>
+      <div class="type-opt" onclick="selectType(this,'evolve')">
+        <div class="oi">✨</div><div class="on">Evolução</div><div class="od">Vale a pena?</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="analyzeBtn" onclick="analyzeScreenshot()" disabled>⚡ Analisar com IA</button>
+    <div class="error-msg" id="errorScreen"></div>
+    <div class="loading" id="loadingScreen"><div class="spinner"></div><div class="loading-text">A IA está a analisar...</div><div class="loading-sub">Identificando Pokémon e calculando stats</div></div>
+    <div class="result-card" id="resultScreen"></div>
+  </div>
+
+  <!-- ══════════ MANUAL ══════════ -->
+  <div id="panel-manual" class="panel">
+    <div class="form-group">
+      <label class="form-label">Nome do Pokémon</label>
+      <input class="form-input" id="m-name" placeholder="ex: Dragonite, Mewtwo...">
+    </div>
+    <div class="form-group">
+      <label class="form-label">PC (Poder de Combate)</label>
+      <input class="form-input" id="m-cp" type="number" placeholder="ex: 3500">
+    </div>
+    <div class="form-group">
+      <label class="form-label">HP</label>
+      <input class="form-input" id="m-hp" type="number" placeholder="ex: 180">
+    </div>
+    <div class="form-group">
+      <label class="form-label">IVs (Ataque / Defesa / Stamina)</label>
+      <div class="form-row">
+        <input class="form-input" id="m-atk" type="number" min="0" max="15" placeholder="ATK">
+        <input class="form-input" id="m-def" type="number" min="0" max="15" placeholder="DEF">
+        <input class="form-input" id="m-sta" type="number" min="0" max="15" placeholder="STA">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Nível do Treinador</label>
+      <input class="form-input" id="m-level" type="number" min="1" max="50" placeholder="ex: 40">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Objetivo</label>
+      <select class="form-input" id="m-goal">
+        <option value="general">Análise Geral</option>
+        <option value="pvp-great">PvP — Great League (1500 PC)</option>
+        <option value="pvp-ultra">PvP — Ultra League (2500 PC)</option>
+        <option value="pvp-master">PvP — Master League</option>
+        <option value="raid">Raids & Gym</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="analyzeManual()">⚡ Analisar</button>
+    <div class="error-msg" id="errorManual"></div>
+    <div class="loading" id="loadingManual"><div class="spinner"></div><div class="loading-text">A calcular...</div><div class="loading-sub">A gerar recomendações personalizadas</div></div>
+    <div class="result-card" id="resultManual"></div>
+  </div>
+
+  <!-- ══════════ BATALHA ══════════ -->
+  <div id="panel-battle" class="panel">
+    <div class="form-group">
+      <label class="form-label">Liga</label>
+      <select class="form-input" id="b-league">
+        <option value="great">Great League (1500 PC)</option>
+        <option value="ultra">Ultra League (2500 PC)</option>
+        <option value="master">Master League</option>
+      </select>
+    </div>
+    <div class="battle-grid">
+      <div>
+        <label class="form-label">O teu Pokémon</label>
+        <input class="form-input" id="b-yours" placeholder="ex: Azumarill">
+      </div>
+      <div class="vs-ball">VS</div>
+      <div>
+        <label class="form-label">Oponente</label>
+        <input class="form-input" id="b-opp" placeholder="ex: Umbreon">
+      </div>
+    </div>
+    <button class="btn-primary btn-battle" onclick="analyzeBattle()">⚔️ Simular Batalha</button>
+    <div class="error-msg" id="errorBattle"></div>
+    <div class="loading" id="loadingBattle"><div class="spinner"></div><div class="loading-text">A simular batalha...</div><div class="loading-sub">Calculando probabilidades e estratégias</div></div>
+    <div class="result-card" id="resultBattle"></div>
+  </div>
+
+  <!-- ══════════ HISTÓRICO ══════════ -->
+  <div id="panel-history" class="panel">
+    <div id="historyList">
+      <div class="history-empty">
+        <div class="ei">📭</div>
+        <div>Sem análises guardadas ainda.<br>Analisa o teu primeiro Pokémon!</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<script>
+// ─── State ───
+let analysisType = 'iv';
+let imageData = null; // {base64, dataUrl, mediaType}
+let history = [];
+
+// ─── Type colours ───
+const typeColors = {
+  normal:"#A8A878",fire:"#F08030",water:"#6890F0",electric:"#F8D030",
+  grass:"#78C850",ice:"#98D8D8",fighting:"#C03028",poison:"#A040A0",
+  ground:"#E0C068",flying:"#A890F0",psychic:"#F85888",bug:"#A8B820",
+  rock:"#B8A038",ghost:"#705898",dragon:"#7038F8",dark:"#705848",
+  sombrio:"#705848",steel:"#B8B8D0",fairy:"#EE99AC"
+};
+function typeBadge(t){
+  const c=typeColors[t?.toLowerCase()]||'#888';
+  return `<span class="type-badge" style="background:${c}22;color:${c};border:1px solid ${c}44">${t}</span>`;
+}
+
+// ─── Tab switching ───
+function switchTab(id){
+  document.querySelectorAll('.tab').forEach((btn,i)=>{
+    const ids=['screenshot','manual','battle','history'];
+    btn.classList.toggle('active',ids[i]===id);
+  });
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+}
+
+// ─── Analysis type ───
+function selectType(el,type){
+  document.querySelectorAll('.type-opt').forEach(o=>o.classList.remove('sel'));
+  el.classList.add('sel');
+  analysisType=type;
+}
+
+// ─── File input ───
+const fileInput = document.getElementById('fileInput');
+fileInput.addEventListener('change', e=>{
+  const file = e.target.files[0];
+  if(file) loadFile(file);
+});
+
+// drag & drop on the zone
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e=>{e.preventDefault();zone.classList.add('drag');});
+zone.addEventListener('dragleave', ()=>zone.classList.remove('drag'));
+zone.addEventListener('drop', e=>{
+  e.preventDefault(); zone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadFile(f);
+});
+
+function loadFile(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const dataUrl = e.target.result;
+    imageData = {
+      base64: dataUrl.split(',')[1],
+      dataUrl,
+      mediaType: file.type || 'image/jpeg'
+    };
+    document.getElementById('previewImg').src = dataUrl;
+    document.getElementById('previewWrap').classList.add('show');
+    document.getElementById('uploadZone').style.display = 'none';
+    document.getElementById('analyzeBtn').disabled = false;
+    clearResult('Screen');
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearImage(){
+  imageData = null;
+  document.getElementById('previewWrap').classList.remove('show');
+  document.getElementById('uploadZone').style.display = 'block';
+  document.getElementById('analyzeBtn').disabled = true;
+  fileInput.value = '';
+  clearResult('Screen');
+}
+
+// ─── Helpers ───
+function showLoading(id, show){
+  document.getElementById('loading'+id).classList.toggle('show', show);
+}
+function showError(id, msg){
+  const el = document.getElementById('error'+id);
+  el.textContent = '⚠️ ' + msg;
+  el.classList.add('show');
+}
+function clearResult(id){
+  document.getElementById('error'+id)?.classList.remove('show');
+  document.getElementById('result'+id)?.classList.remove('show');
+}
+
+// ─── Claude API ───
+async function callClaude(messages){
+  const res = await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({model:'claude-sonnet-4-20250514', max_tokens:1200, messages})
+  });
+  const data = await res.json();
+  if(data.error) throw new Error(data.error.message);
+  const text = data.content?.map(c=>c.text||'').join('');
+  return JSON.parse(text.replace(/```json|```/g,'').trim());
+}
+
+// ─── Prompts ───
+const PROMPTS = {
+  iv:`Analisa este screenshot do Pokémon GO. Identifica o Pokémon, lê PC, PS e estima IVs pelas barras do líder. Responde APENAS em JSON puro sem markdown:
+{"pokemon_name":"nome","cp":número_ou_null,"hp":número_ou_null,"types":["tipo"],"iv_atk":0-15,"iv_def":0-15,"iv_sta":0-15,"iv_percentage":0-100,"iv_rating":"Excelente/Muito Bom/Bom/Mediano/Fraco","stardust_to_max":número,"best_moveset":"move / move","recommendations":["rec1","rec2","rec3"],"ai_summary":"análise em 3 frases em português sobre o pokémon e o que o treinador deve fazer"}`,
+  raid:`Analisa este screenshot do Pokémon GO - Raid Boss. Responde APENAS em JSON puro:
+{"boss_name":"nome","boss_types":["tipo"],"boss_tier":"T1/T3/T5/Mega","cp_range":"min-max","min_trainers":número,"difficulty":"Fácil/Médio/Difícil","top_counters":[{"pokemon":"nome","moves":"moveset","reason":"porquê"},{"pokemon":"nome","moves":"moveset","reason":"porquê"},{"pokemon":"nome","moves":"moveset","reason":"porquê"},{"pokemon":"nome","moves":"moveset","reason":"porquê"},{"pokemon":"nome","moves":"moveset","reason":"porquê"}],"recommendations":["dica1","dica2","dica3"],"ai_summary":"análise em 3 frases em português"}`,
+  pvp:`Analisa este screenshot do Pokémon GO para PvP. Responde APENAS em JSON puro:
+{"pokemon_name":"nome","types":["tipo"],"best_league":"Great/Ultra/Master","pvp_rating":"S/A/B/C/D","best_pvp_moveset":"move / moves","iv_for_pvp":{"atk":0-15,"def":0-15,"sta":0-15},"best_vs":["p1","p2","p3"],"worst_vs":["p1","p2","p3"],"cp_cap":"número","recommendations":["dica1","dica2","dica3"],"ai_summary":"análise PvP em 3 frases em português"}`,
+  evolve:`Analisa este screenshot do Pokémon GO - vale a pena evoluir? Responde APENAS em JSON puro:
+{"pokemon_name":"nome","evolves_to":"próxima evolução","candy_needed":número,"stardust_needed":número,"iv_percentage":0-100,"verdict":"SIM/NÃO/TALVEZ","verdict_reason":"razão em 1 frase","evolved_cp_estimate":"CP estimado","recommendations":["dica1","dica2","dica3"],"ai_summary":"análise em 3 frases em português"}`
+};
+
+// ─── Analyse screenshot ───
+async function analyzeScreenshot(){
+  if(!imageData) return;
+  showLoading('Screen',true);
+  clearResult('Screen');
+  document.getElementById('analyzeBtn').disabled = true;
+  try{
+    const r = await callClaude([{role:'user',content:[
+      {type:'image',source:{type:'base64',media_type:imageData.mediaType,data:imageData.base64}},
+      {type:'text',text:PROMPTS[analysisType]}
+    ]}]);
+    showLoading('Screen',false);
+    document.getElementById('analyzeBtn').disabled = false;
+    renderResult(r, analysisType, 'resultScreen');
+    addHistory(r, analysisType, imageData.dataUrl);
+  }catch(e){
+    showLoading('Screen',false);
+    document.getElementById('analyzeBtn').disabled = false;
+    showError('Screen','Não foi possível analisar. Certifica-te que é um screenshot do Pokémon GO.');
+  }
+}
+
+// ─── Analyse manual ───
+async function analyzeManual(){
+  const name = document.getElementById('m-name').value.trim();
+  if(!name){showError('Manual','Introduz o nome do Pokémon.');return;}
+  const cp=document.getElementById('m-cp').value,hp=document.getElementById('m-hp').value;
+  const atk=document.getElementById('m-atk').value,def=document.getElementById('m-def').value,sta=document.getElementById('m-sta').value;
+  const level=document.getElementById('m-level').value,goal=document.getElementById('m-goal').value;
+  const gl={general:'análise geral','pvp-great':'PvP Great League','pvp-ultra':'PvP Ultra League','pvp-master':'PvP Master League',raid:'Raids e Gyms'};
+  showLoading('Manual',true); clearResult('Manual');
+  try{
+    const r = await callClaude([{role:'user',content:
+      `Analisa para ${gl[goal]}: ${name}, CP:${cp||'?'}, HP:${hp||'?'}, IVs:${atk||'?'}/${def||'?'}/${sta||'?'}, Nível treinador:${level||'?'}.
+Responde APENAS em JSON puro:
+{"pokemon_name":"${name}","types":["tipo"],"iv_percentage":0-100,"iv_atk":${atk||0},"iv_def":${def||0},"iv_sta":${sta||0},"iv_rating":"texto","pvp_rating":"S/A/B/C/D","best_moveset":"move/move","stardust_to_max":número,"recommendations":["r1","r2","r3"],"ai_summary":"análise em 3 frases em português"}`
+    }]);
+    showLoading('Manual',false);
+    renderResult(r,'iv','resultManual');
+    addHistory(r,'manual',null);
+  }catch(e){showLoading('Manual',false);showError('Manual','Erro na análise. Verifica os dados e tenta de novo.');}
+}
+
+// ─── Analyse battle ───
+async function analyzeBattle(){
+  const yours=document.getElementById('b-yours').value.trim(), opp=document.getElementById('b-opp').value.trim();
+  if(!yours||!opp){showError('Battle','Preenche os dois Pokémon.');return;}
+  const ll={great:'Great League (1500 PC)',ultra:'Ultra League (2500 PC)',master:'Master League'};
+  const league=ll[document.getElementById('b-league').value];
+  showLoading('Battle',true); clearResult('Battle');
+  try{
+    const r = await callClaude([{role:'user',content:
+      `Batalha PvP Pokémon GO em ${league}: ${yours} VS ${opp}.
+Responde APENAS em JSON puro:
+{"your_pokemon":"${yours}","opponent_pokemon":"${opp}","league":"${league}","win_probability":0-100,"outcome":"Vitória/Derrota/Empate provável","your_best_moveset":"moveset","key_shields":"dica escudos","your_strengths":["v1","v2"],"your_weaknesses":["f1","f2"],"battle_tips":["t1","t2","t3"],"ai_summary":"análise em 3 frases em português"}`
+    }]);
+    showLoading('Battle',false);
+    renderBattle(r,'resultBattle');
+  }catch(e){showLoading('Battle',false);showError('Battle','Erro ao simular batalha. Tenta novamente.');}
+}
+
+// ─── Render results ───
+function renderResult(r, type, cardId){
+  const card = document.getElementById(cardId);
+  let headerTitle='', bodyHtml='';
+  if(type==='iv'){
+    headerTitle='🧬 Análise de IVs';
+    const pct=r.iv_percentage||0;
+    bodyHtml=`
+      <div class="iv-bars">
+        <div class="iv-bar-row"><div class="iv-lbl" style="color:#ef5350">ATK</div><div class="iv-track"><div class="iv-fill fill-atk" style="width:${((r.iv_atk||0)/15)*100}%"></div></div><div class="iv-val">${r.iv_atk||0}/15</div></div>
+        <div class="iv-bar-row"><div class="iv-lbl" style="color:#42a5f5">DEF</div><div class="iv-track"><div class="iv-fill fill-def" style="width:${((r.iv_def||0)/15)*100}%"></div></div><div class="iv-val">${r.iv_def||0}/15</div></div>
+        <div class="iv-bar-row"><div class="iv-lbl" style="color:#66bb6a">STA</div><div class="iv-track"><div class="iv-fill fill-sta" style="width:${((r.iv_sta||0)/15)*100}%"></div></div><div class="iv-val">${r.iv_sta||0}/15</div></div>
+      </div>
+      <div class="iv-total"><div class="iv-pct">${pct}%</div><div class="iv-pct-lbl">${r.iv_rating||'—'}</div></div>
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-cell-lbl">PC</div><div class="info-cell-val c-accent">${r.cp||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">HP</div><div class="info-cell-val">${r.hp||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Tipos</div><div class="info-cell-val" style="font-size:12px">${(r.types||[]).map(typeBadge).join('')}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Stardust p/ Max</div><div class="info-cell-val c-gold">${r.stardust_to_max?(+r.stardust_to_max).toLocaleString():'—'}</div></div>
+      </div>
+      ${r.best_moveset?`<div class="info-cell" style="margin-bottom:16px"><div class="info-cell-lbl">Melhor Moveset</div><div class="info-cell-val c-accent" style="font-size:13px">${r.best_moveset}</div></div>`:''}
+      <div class="sec-title">💡 Recomendações</div>
+      ${(r.recommendations||[]).map(rec=>`<div class="rec-item"><div class="rec-icon">💡</div><div class="rec-text">${rec}</div></div>`).join('')}`;
+  } else if(type==='raid'){
+    headerTitle='🐉 Raid Boss';
+    bodyHtml=`
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-cell-lbl">Tier</div><div class="info-cell-val c-accent">${r.boss_tier||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">CP ao Capturar</div><div class="info-cell-val">${r.cp_range||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Tipos</div><div class="info-cell-val" style="font-size:12px">${(r.boss_types||[]).map(typeBadge).join('')}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Treinadores</div><div class="info-cell-val">${r.min_trainers||'—'}+</div></div>
+      </div>
+      <div class="sec-title">🏆 Top Counters</div>
+      ${(r.top_counters||[]).map(c=>`<div class="counter-item"><span style="font-size:18px">⚔️</span><div><div class="counter-name">${c.pokemon}</div><div class="counter-moves">${c.moves}</div><div class="counter-reason">${c.reason}</div></div></div>`).join('')}
+      <div class="sec-title" style="margin-top:12px">💡 Dicas</div>
+      ${(r.recommendations||[]).map(rec=>`<div class="rec-item"><div class="rec-icon">💡</div><div class="rec-text">${rec}</div></div>`).join('')}`;
+  } else if(type==='pvp'){
+    headerTitle='🏆 PvP Analysis';
+    bodyHtml=`
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-cell-lbl">Rating</div><div class="info-cell-val c-success">${r.pvp_rating||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Melhor Liga</div><div class="info-cell-val c-accent">${r.best_league||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">IVs PvP Ideais</div><div class="info-cell-val">${r.iv_for_pvp?`${r.iv_for_pvp.atk}/${r.iv_for_pvp.def}/${r.iv_for_pvp.sta}`:'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">CP Cap</div><div class="info-cell-val">${r.cp_cap||'—'}</div></div>
+      </div>
+      <div class="sec-title">✅ Bate facilmente</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">${(r.best_vs||[]).map(p=>`<span class="tag tag-green">${p}</span>`).join('')}</div>
+      <div class="sec-title">❌ Dificuldades contra</div>
+      <div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px">${(r.worst_vs||[]).map(p=>`<span class="tag tag-red">${p}</span>`).join('')}</div>
+      <div class="sec-title">💡 Recomendações</div>
+      ${(r.recommendations||[]).map(rec=>`<div class="rec-item"><div class="rec-icon">💡</div><div class="rec-text">${rec}</div></div>`).join('')}`;
+  } else if(type==='evolve'){
+    headerTitle='✨ Evolução';
+    const vc={SIM:'var(--success)',NÃO:'var(--danger)',TALVEZ:'var(--gold)'};
+    bodyHtml=`
+      <div style="text-align:center;padding:16px;background:var(--surface2);border-radius:12px;margin-bottom:16px;border:1px solid var(--border)">
+        <div style="font-size:38px;font-weight:900;font-family:'Share Tech Mono',monospace;color:${vc[r.verdict]||'var(--accent)'}">${r.verdict||'—'}</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:4px">${r.verdict_reason||''}</div>
+      </div>
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-cell-lbl">Evolui para</div><div class="info-cell-val c-accent">${r.evolves_to||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">CP Estimado</div><div class="info-cell-val">${r.evolved_cp_estimate||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Candy</div><div class="info-cell-val c-gold">${r.candy_needed||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">IV %</div><div class="info-cell-val">${r.iv_percentage||'—'}%</div></div>
+      </div>
+      <div class="sec-title">💡 Recomendações</div>
+      ${(r.recommendations||[]).map(rec=>`<div class="rec-item"><div class="rec-icon">💡</div><div class="rec-text">${rec}</div></div>`).join('')}`;
+  }
+
+  card.innerHTML=`
+    <div class="result-header">
+      <div class="result-title">${headerTitle}</div>
+      <div class="result-sub">${r.pokemon_name||r.boss_name||''}</div>
+    </div>
+    <div class="result-body">
+      ${bodyHtml}
+      ${r.ai_summary?`<div class="ai-box"><div class="ai-label">🤖 ANÁLISE IA</div>${r.ai_summary}</div>`:''}
+    </div>`;
+  card.classList.add('show');
+}
+
+function renderBattle(r, cardId){
+  const card=document.getElementById(cardId);
+  const win=r.win_probability||50;
+  card.innerHTML=`
+    <div class="result-header">
+      <div class="result-title">⚔️ Batalha PvP</div>
+      <div class="result-sub">${r.your_pokemon} vs ${r.opponent_pokemon}</div>
+    </div>
+    <div class="result-body">
+      <div class="win-bar-wrap">
+        <div class="sec-title">Probabilidade de Vitória — ${r.outcome||''}</div>
+        <div class="win-bar-row">
+          <div style="font-size:11px;color:var(--success);font-weight:700;width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.your_pokemon}</div>
+          <div class="win-bar-track"><div class="win-bar-fill" style="width:${win}%"></div></div>
+          <div class="win-pct" style="color:${win>=50?'var(--success)':'var(--danger)'}">${win}%</div>
+        </div>
+      </div>
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-cell-lbl">Teu Moveset</div><div class="info-cell-val c-accent" style="font-size:12px">${r.your_best_moveset||'—'}</div></div>
+        <div class="info-cell"><div class="info-cell-lbl">Escudos</div><div class="info-cell-val" style="font-size:12px">${r.key_shields||'—'}</div></div>
+      </div>
+      <div class="sec-title">✅ Vantagens</div>
+      ${(r.your_strengths||[]).map(s=>`<div class="rec-item"><div class="rec-icon">✅</div><div class="rec-text">${s}</div></div>`).join('')}
+      <div class="sec-title" style="margin-top:8px">⚠️ Fraquezas</div>
+      ${(r.your_weaknesses||[]).map(s=>`<div class="rec-item warn"><div class="rec-icon">⚠️</div><div class="rec-text">${s}</div></div>`).join('')}
+      <div class="sec-title" style="margin-top:8px">🎯 Dicas</div>
+      ${(r.battle_tips||[]).map(t=>`<div class="rec-item"><div class="rec-icon">🎯</div><div class="rec-text">${t}</div></div>`).join('')}
+      ${r.ai_summary?`<div class="ai-box"><div class="ai-label">🤖 ANÁLISE IA</div>${r.ai_summary}</div>`:''}
+    </div>`;
+  card.classList.add('show');
+}
+
+// ─── History ───
+function addHistory(r, type, thumb){
+  history.unshift({
+    id:Date.now(),
+    name: r.pokemon_name||r.boss_name||r.your_pokemon||'Pokémon',
+    type, thumb,
+    pct: r.iv_percentage||null
+  });
+  if(history.length>20) history=history.slice(0,20);
+  renderHistory();
+}
+
+function renderHistory(){
+  const icons={raid:'🐉',pvp:'🏆',evolve:'✨',battle:'⚔️',manual:'✏️'};
+  const list=document.getElementById('historyList');
+  if(!history.length){
+    list.innerHTML='<div class="history-empty"><div class="ei">📭</div><div>Sem análises ainda.<br>Analisa o teu primeiro Pokémon!</div></div>';
+    return;
+  }
+  list.innerHTML=history.map(h=>`
+    <div class="history-item">
+      ${h.thumb
+        ?`<img class="history-thumb" src="${h.thumb}" alt="">`
+        :`<div class="history-icon">${icons[h.type]||'🧬'}</div>`}
+      <div style="flex:1">
+        <div class="history-name">${h.name}</div>
+        <div class="history-meta">${h.type.toUpperCase()}</div>
+      </div>
+      ${h.pct!==null?`<div class="history-iv">${h.pct}%</div>`:''}
+    </div>`).join('');
+}
+</script>
+</body>
+</html>
